@@ -1,0 +1,34 @@
+name: web client artifact
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build web client
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Build web client
+        run: bun --cwd packages/app build
+
+      - name: Upload web client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-client-${{ github.sha }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: packages/app/dist
